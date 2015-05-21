@@ -45,6 +45,7 @@
 #include <set>
 #include <Eigen/Core>
 #include <console_bridge/console.h>
+#include <fcl/distance.h>
 
 namespace collision_detection
 {
@@ -130,6 +131,25 @@ namespace collision_detection
     }
   };
 
+  /** \brief Representation of a detailed distance */
+  struct DetailedDistance
+  {
+    DetailedDistance(std::string nearest_object, fcl::DistanceResult dist_result)
+    {
+      this->distance = dist_result.min_distance;
+      this->nearest_object = nearest_object;
+      this->nearest_points.first = Eigen::Vector3d(dist_result.nearest_points[0].data.vs);
+      this->nearest_points.second = Eigen::Vector3d(dist_result.nearest_points[1].data.vs);
+    }
+    DetailedDistance(){}
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    double distance; /**< Distance between objects */
+    std::string nearest_object; /**< Nearest object link name */
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> nearest_points; /**< Point on each object */
+  };
+
   /** \brief Representation of a collision checking result */
   struct CollisionResult
   {
@@ -139,6 +159,7 @@ namespace collision_detection
     {
     }
     typedef std::map<std::pair<std::string, std::string>, std::vector<Contact> > ContactMap;
+    typedef std::map<std::string, DetailedDistance> DistanceDetailedMap;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -147,6 +168,7 @@ namespace collision_detection
     {
       collision = false;
       distance = std::numeric_limits<double>::max();
+      distance_detailed.clear();
       contact_count = 0;
       contacts.clear();
       cost_sources.clear();
@@ -157,6 +179,9 @@ namespace collision_detection
 
     /** \brief Closest distance between two bodies */
     double               distance;
+
+    /** \brief Map of closest distance and points between two bodies */
+    DistanceDetailedMap distance_detailed;
 
     /** \brief Number of contacts returned */
     std::size_t          contact_count;

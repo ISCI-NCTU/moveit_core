@@ -70,6 +70,8 @@ namespace collision_detection
 
     virtual double distanceSelf(const robot_state::RobotState &state) const;
     virtual double distanceSelf(const robot_state::RobotState &state, const AllowedCollisionMatrix &acm) const;
+    virtual CollisionResult::DistanceDetailedMap distanceSelfDetailed(const robot_state::RobotState &state) const;
+    virtual CollisionResult::DistanceDetailedMap distanceSelfDetailed(const robot_state::RobotState &state, const AllowedCollisionMatrix &acm) const;
     virtual double distanceOther(const robot_state::RobotState &state,
                                  const CollisionRobot &other_robot, const robot_state::RobotState &other_state) const;
     virtual double distanceOther(const robot_state::RobotState &state, const CollisionRobot &other_robot,
@@ -88,6 +90,7 @@ namespace collision_detection
                                    const CollisionRobot &other_robot, const robot_state::RobotState &other_state,
                                    const AllowedCollisionMatrix *acm) const;
     double distanceSelfHelper(const robot_state::RobotState &state, const AllowedCollisionMatrix *acm) const;
+    collision_detection::CollisionResult::DistanceDetailedMap distanceSelfDetailedHelper(const robot_state::RobotState &state, const AllowedCollisionMatrix *acm) const;
     double distanceOtherHelper(const robot_state::RobotState &state, const CollisionRobot &other_robot,
                                const robot_state::RobotState &other_state, const AllowedCollisionMatrix *acm) const;
 

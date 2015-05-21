@@ -455,6 +455,133 @@ bool distanceCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* 
   return cdata->done_;
 }
 
+
+bool distanceDetailedCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void* data, double& min_dist)
+{
+  CollisionData* cdata = reinterpret_cast<CollisionData*>(data);
+
+  const CollisionGeometryData* cd1 = static_cast<const CollisionGeometryData*>(o1->collisionGeometry()->getUserData());
+  const CollisionGeometryData* cd2 = static_cast<const CollisionGeometryData*>(o2->collisionGeometry()->getUserData());
+
+  // If active components are specified
+  if (cdata->active_components_only_)
+  {
+    const robot_model::LinkModel *l1 = cd1->type == BodyTypes::ROBOT_LINK ? cd1->ptr.link : (cd1->type == BodyTypes::ROBOT_ATTACHED ? cd1->ptr.ab->getAttachedLink() : NULL);
+    const robot_model::LinkModel *l2 = cd2->type == BodyTypes::ROBOT_LINK ? cd2->ptr.link : (cd2->type == BodyTypes::ROBOT_ATTACHED ? cd2->ptr.ab->getAttachedLink() : NULL);
+
+    // If neither of the involved components is active
+    if ((!l1 || cdata->active_components_only_->find(l1) == cdata->active_components_only_->end()) &&
+        (!l2 || cdata->active_components_only_->find(l2) == cdata->active_components_only_->end()))
+    {
+      return false;
+    }
+  }
+
+  // use the collision matrix (if any) to avoid certain distance checks
+  bool always_allow_collision = false;
+  if (cdata->acm_)
+  {
+    AllowedCollision::Type type;
+
+    bool found = cdata->acm_->getAllowedCollision(cd1->getID(), cd2->getID(), type);
+    if (found)
+    {
+      // if we have an entry in the collision matrix, we read it
+      if (type == AllowedCollision::ALWAYS)
+      {
+        always_allow_collision = true;
+        if (!cdata->req_->verbose)
+          logDebug("Collision between '%s' and '%s' is always allowed. No contacts are computed.",
+                   cd1->getID().c_str(), cd2->getID().c_str());
+      }
+    }
+  }
+
+  // check if a link is touching an attached object
+  if (cd1->type == BodyTypes::ROBOT_LINK && cd2->type == BodyTypes::ROBOT_ATTACHED)
+  {
+    const std::set<std::string> &tl = cd2->ptr.ab->getTouchLinks();
+    if (tl.find(cd1->getID()) != tl.end())
+    {
+      always_allow_collision = true;
+      if (!cdata->req_->verbose)
+        logDebug("Robot link '%s' is allowed to touch attached object '%s'. No contacts are computed.",
+                 cd1->getID().c_str(), cd2->getID().c_str());
+    }
+  }
+  else
+  {
+    if (cd2->type == BodyTypes::ROBOT_LINK && cd1->type == BodyTypes::ROBOT_ATTACHED)
+    {
+      const std::set<std::string> &tl = cd1->ptr.ab->getTouchLinks();
+      if (tl.find(cd2->getID()) != tl.end())
+      {
+        always_allow_collision = true;
+        if (!cdata->req_->verbose)
+          logDebug("Robot link '%s' is allowed to touch attached object '%s'. No contacts are computed.",
+                   cd2->getID().c_str(), cd1->getID().c_str());
+      }
+    }
+  }
+
+  if(always_allow_collision)
+  {
+    return false;
+  }
+
+  if (!cdata->req_->verbose)
+    logDebug("Actually checking collisions between %s and %s", cd1->getID().c_str(), cd2->getID().c_str());
+
+  fcl::DistanceResult dist_result;
+  double d = fcl::distance(o1, o2, fcl::DistanceRequest(true), dist_result);
+
+  // Store detailed distance information for each objects
+  collision_detection::DetailedDistance distance_detailed1(cd2->ptr.obj->id_, dist_result);
+  collision_detection::DetailedDistance distance_detailed2;
+  std::map<std::string, collision_detection::DetailedDistance>::iterator it;
+
+  distance_detailed2.distance = distance_detailed1.distance;
+  distance_detailed2.nearest_object = cd1->ptr.obj->id_;
+  distance_detailed2.nearest_points.first = distance_detailed1.nearest_points.second;
+  distance_detailed2.nearest_points.second = distance_detailed1.nearest_points.first;
+
+  // Check if either object is already in the map. If not add it and if present
+  // check to see if the new distance is closer. If closer remove the existing
+  // one and add the new distance information.
+  it = cdata->res_->distance_detailed.find(cd1->ptr.obj->id_);
+  if (it == cdata->res_->distance_detailed.end())
+  {
+    cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd1->ptr.obj->id_, distance_detailed1));
+  }
+  else
+  {
+    if (distance_detailed1.distance < it->second.distance)
+    {
+        cdata->res_->distance_detailed.erase(cd1->ptr.obj->id_);
+        cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd1->ptr.obj->id_, distance_detailed1));
+    }
+  }
+
+  it = cdata->res_->distance_detailed.find(cd2->ptr.obj->id_);
+  if (it == cdata->res_->distance_detailed.end())
+  {
+    cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd2->ptr.obj->id_, distance_detailed2));
+  }
+  else
+  {
+    if (distance_detailed1.distance < it->second.distance)
+    {
+        cdata->res_->distance_detailed.erase(cd2->ptr.obj->id_);
+        cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd2->ptr.obj->id_, distance_detailed2));
+    }
+  }
+
+  if(cdata->res_->distance > d)
+    cdata->res_->distance = d;
+
+  return false;
+}
+
 /* We template the function so we get a different cache for each of the template arguments combinations */
 template<typename BV, typename T>
 FCLShapeCache& GetShapeCache()

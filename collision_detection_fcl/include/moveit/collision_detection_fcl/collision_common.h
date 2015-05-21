@@ -213,6 +213,8 @@ bool collisionCallback(fcl::CollisionObject *o1, fcl::CollisionObject *o2, void 
 
 bool distanceCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void *data, double& min_dist);
 
+bool distanceDetailedCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2, void *data, double& min_dist);
+
 FCLGeometryConstPtr createCollisionGeometry(const shapes::ShapeConstPtr &shape,
                                             const robot_model::LinkModel *link,
                                             int shape_index);
