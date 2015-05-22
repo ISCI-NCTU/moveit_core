@@ -168,12 +168,12 @@ namespace collision_detection
                                 const AllowedCollisionMatrix &acm) const = 0;
 
     /** \brief The detailed distance to self-collision given the robot is at state \e state. */
-    virtual CollisionResult::DistanceDetailedMap distanceSelfDetailed(const robot_state::RobotState &state) const = 0;
+    virtual CollisionResult::DistanceDetailedMap distanceSelfDetailed(const robot_state::RobotState &state) const;
 
     /** \brief The detailed distance to self-collision given the robot is at state \e state, ignoring
         the distances between links that are allowed to always collide (as specified by \e acm) */
     virtual CollisionResult::DistanceDetailedMap distanceSelfDetailed(const robot_state::RobotState &state,
-                                                                  const AllowedCollisionMatrix &acm) const = 0;
+                                                                  const AllowedCollisionMatrix &acm) const;
 
     /** \brief The distance to another robot instance.
         @param state The state of this robot to consider
