@@ -535,44 +535,35 @@ bool distanceDetailedCallback(fcl::CollisionObject* o1, fcl::CollisionObject* o2
   fcl::DistanceResult dist_result;
   double d = fcl::distance(o1, o2, fcl::DistanceRequest(true), dist_result);
 
-  // Store detailed distance information for each objects
-  collision_detection::DetailedDistance distance_detailed1(cd2->ptr.obj->id_, dist_result);
-  collision_detection::DetailedDistance distance_detailed2;
-  std::map<std::string, collision_detection::DetailedDistance>::iterator it;
-
-  distance_detailed2.distance = distance_detailed1.distance;
-  distance_detailed2.nearest_object = cd1->ptr.obj->id_;
-  distance_detailed2.nearest_points.first = distance_detailed1.nearest_points.second;
-  distance_detailed2.nearest_points.second = distance_detailed1.nearest_points.first;
-
-  // Check if either object is already in the map. If not add it and if present
+  // Check if either object is already in the map. If not add it or if present
   // check to see if the new distance is closer. If closer remove the existing
   // one and add the new distance information.
+  std::map<std::string, fcl::DistanceResult>::iterator it;
   it = cdata->res_->distance_detailed.find(cd1->ptr.obj->id_);
   if (it == cdata->res_->distance_detailed.end())
   {
-    cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd1->ptr.obj->id_, distance_detailed1));
+    cdata->res_->distance_detailed.insert(std::make_pair<std::string, fcl::DistanceResult>(cd1->ptr.obj->id_, dist_result));
   }
   else
   {
-    if (distance_detailed1.distance < it->second.distance)
+    if (dist_result.min_distance < it->second.min_distance)
     {
-        cdata->res_->distance_detailed.erase(cd1->ptr.obj->id_);
-        cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd1->ptr.obj->id_, distance_detailed1));
+      cdata->res_->distance_detailed.erase(cd1->ptr.obj->id_);
+      cdata->res_->distance_detailed.insert(std::make_pair<std::string, fcl::DistanceResult>(cd1->ptr.obj->id_, dist_result));
     }
   }
 
   it = cdata->res_->distance_detailed.find(cd2->ptr.obj->id_);
   if (it == cdata->res_->distance_detailed.end())
   {
-    cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd2->ptr.obj->id_, distance_detailed2));
+    cdata->res_->distance_detailed.insert(std::make_pair<std::string, fcl::DistanceResult>(cd2->ptr.obj->id_, dist_result));
   }
   else
   {
-    if (distance_detailed1.distance < it->second.distance)
+    if (dist_result.min_distance < it->second.min_distance)
     {
-        cdata->res_->distance_detailed.erase(cd2->ptr.obj->id_);
-        cdata->res_->distance_detailed.insert(std::make_pair<std::string, collision_detection::DetailedDistance>(cd2->ptr.obj->id_, distance_detailed2));
+      cdata->res_->distance_detailed.erase(cd2->ptr.obj->id_);
+      cdata->res_->distance_detailed.insert(std::make_pair<std::string, fcl::DistanceResult>(cd2->ptr.obj->id_, dist_result));
     }
   }
 

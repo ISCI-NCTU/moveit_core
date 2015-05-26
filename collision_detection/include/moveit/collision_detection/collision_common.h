@@ -131,25 +131,6 @@ namespace collision_detection
     }
   };
 
-  /** \brief Representation of a detailed distance */
-  struct DetailedDistance
-  {
-    DetailedDistance(std::string nearest_object, fcl::DistanceResult dist_result)
-    {
-      this->distance = dist_result.min_distance;
-      this->nearest_object = nearest_object;
-      this->nearest_points.first = Eigen::Vector3d(dist_result.nearest_points[0].data.vs);
-      this->nearest_points.second = Eigen::Vector3d(dist_result.nearest_points[1].data.vs);
-    }
-    DetailedDistance(){}
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    double distance; /**< Distance between objects */
-    std::string nearest_object; /**< Nearest object link name */
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> nearest_points; /**< Point on each object */
-  };
-
   /** \brief Representation of a collision checking result */
   struct CollisionResult
   {
@@ -159,7 +140,7 @@ namespace collision_detection
     {
     }
     typedef std::map<std::pair<std::string, std::string>, std::vector<Contact> > ContactMap;
-    typedef std::map<std::string, DetailedDistance> DistanceDetailedMap;
+    typedef std::map<std::string, fcl::DistanceResult> DistanceDetailedMap;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

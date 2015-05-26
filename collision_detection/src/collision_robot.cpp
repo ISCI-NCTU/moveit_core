@@ -255,11 +255,13 @@ void collision_detection::CollisionRobot::updatedPaddingOrScaling(const std::vec
 {
 }
 
+// The default implementation is being implemented for backward compatibility.
 collision_detection::CollisionResult::DistanceDetailedMap collision_detection::CollisionRobot::distanceSelfDetailed(const robot_state::RobotState &state) const
 {
   throw moveit::Exception("This method has not been implemented. It should be implemented by the inheriting class.");
 }
 
+// The default implementation is being implemented for backward compatibility.
 collision_detection::CollisionResult::DistanceDetailedMap collision_detection::CollisionRobot::distanceSelfDetailed(const robot_state::RobotState &state,
                                                               const collision_detection::AllowedCollisionMatrix &acm) const
 {
